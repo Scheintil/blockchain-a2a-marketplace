@@ -1,0 +1,45 @@
+{
+  "contracts/HelloWorld.sol": {
+    "__sources__": {
+      "contracts/HelloWorld.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.6.12 <0.9.0;\n\ncontract HelloWorld {\n  /**\n   * @dev Prints Hello World string\n   */\n  function print() public pure returns (string memory) {\n    return \"Hello World!\";\n  }\n}\n",
+        "file": "contracts/HelloWorld.sol"
+      }
+    }
+  },
+  "contracts/FirstContract.sol": {
+    "__sources__": {}
+  },
+  "contracts/Store.sol": {
+    "__sources__": {
+      "contracts/Store.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\n// Code for teaching purposes only. \r\n// See University of Basel cryptolectures.io\r\n\r\npragma solidity ^0.8.9;\r\n\r\ncontract Store {\r\n    uint public number = 0;\r\n    // After deployment, this is stored on the blockchain\r\n     \r\n     function store(uint256 _value) public {\r\n        number = _value;\r\n    }\r\n\r\n    }",
+        "file": "contracts/Store.sol"
+      }
+    }
+  },
+  "contracts/RestrictedStore.sol": {
+    "__sources__": {
+      "contracts/RestrictedStore.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\n// Code for teaching purposes only. \r\n// See University of Basel cryptolectures.io\r\n\r\npragma solidity ^0.8.9;\r\n\r\ncontract RestrictedStore {\r\n    // Contract owner\r\n    address public owner;\r\n\r\n    // Stored number\r\n    uint256 public number = 0;\r\n\r\n    // Set the owner at deployment\r\n    constructor() {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    // Modifier to restrict function access to the owner\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"Ah ah ah, you did not say the magic word!\");\r\n        _;\r\n    }\r\n\r\n    // Store a number (only owner can do this)\r\n    function store(uint256 _value) public onlyOwner {\r\n        number = _value;\r\n    }\r\n\r\n    // Retrieve the stored number\r\n    function retrieve() public view returns (uint256) {\r\n        return number;\r\n    }\r\n}\r\n",
+        "file": "contracts/RestrictedStore.sol"
+      }
+    }
+  },
+  "contracts/SimpleToken.sol": {
+    "__sources__": {
+      "contracts/SimpleToken.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\n// Code for teaching purposes only. \r\n// See University of Basel cryptolectures.io\r\n\r\npragma solidity ^0.8.9;\r\n\r\ncontract SimpleToken { \r\n    \r\n    // 1. Variables\r\n    mapping (address => uint256) private balances;\r\n    mapping(address => mapping(address => uint256)) private allowed;\r\n\r\n    uint256 public totalSupply;\r\n    string public name;\r\n    uint8 public decimals;\r\n    string public symbol;\r\n\r\n    // 2. Events\r\n    event Transfer(\r\n        address indexed _from,\r\n        address indexed _to,\r\n        uint256 value\r\n    );\r\n\r\n    event Approval(\r\n        address indexed _owner,\r\n        address indexed _spender,\r\n        uint256 value\r\n    );\r\n\r\n    // 3. Constructor\r\n    constructor (\r\n        uint256 _initialAmount,\r\n        string memory _tokenName,\r\n        uint8 _decimalUnits,\r\n        string memory _tokenSymbol\r\n    ) {\r\n        balances[msg.sender] = _initialAmount;\r\n        totalSupply = _initialAmount;\r\n        name = _tokenName;\r\n        decimals = _decimalUnits;\r\n        symbol = _tokenSymbol;\r\n        emit Transfer(address(0), msg.sender, _initialAmount);\r\n    }\r\n\r\n    // 4. Functions\r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        require(balances[msg.sender] >= _value, \"insufficient balance\");\r\n        balances[msg.sender] -= _value;\r\n        balances[_to] += _value;\r\n        emit Transfer(msg.sender, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n        require(allowed[_from][msg.sender] >= _value, \"insufficient allowance\");\r\n        require(balances[_from] >= _value, \"insufficient balance\");\r\n        if (allowed[_from][msg.sender] < type(uint256).max) {\r\n            allowed[_from][msg.sender] -= _value;\r\n        }\r\n        balances[_from] -= _value;\r\n        balances[_to] += _value;\r\n        emit Transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    function balanceOf(address _owner) public view returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n\r\n    function approve(address _spender, uint256 _value) public returns (bool success) {\r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n}",
+        "file": "contracts/SimpleToken.sol"
+      }
+    }
+  },
+  "contracts/SessionWallet-draft.sol": {
+    "__sources__": {
+      "contracts/SessionWallet-draft.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.8.20;\r\n\r\ncontract SessionWallet {\r\n    address public owner;\r\n    address payable wallet; \r\n\r\n    mapping(address => uint256) public agentExpiry;\r\n\r\n    event AgentAuthorized(address indexed agent, uint256 expiry);\r\n    event AgentRevoked(address indexed agent);\r\n    event Transfer(address indexed to, uint256 amount);\r\n    event Withdrawal(address indexed to, uint256 amount);\r\n\r\n    constructor() payable {\r\n        owner = msg.sender;\r\n        wallet = payable(address(this));\r\n    }\r\n    \r\n    modifier onlyAgent() {\r\n        require(agentExpiry[msg.sender] > block.timestamp, \"Not agent or expired\");\r\n        _;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"Not owner\");\r\n        _;\r\n    }\r\n\r\n    function authorizeAgent(address _agent, uint256 _duration) external onlyOwner {\r\n        require(_agent != address(0), \"Invalid agent\");\r\n        require(_duration > 0, \"Duration too short\");\r\n        agentExpiry[_agent] = block.timestamp + _duration;\r\n        emit AgentAuthorized(_agent, block.timestamp + _duration);\r\n    }\r\n\r\n    function revokeAgent(address _agent) external onlyOwner {\r\n        delete agentExpiry[_agent];\r\n        emit AgentRevoked(_agent);\r\n    }\r\n\r\n    function transfer(address payable to, uint256 amount) external onlyAgent {\r\n        require(to != address(0), \"Invalid address\");\r\n        require(wallet.balance >= amount, \"Insufficient balance\");\r\n        (bool success, ) = to.call{value: amount}(\"\");\r\n        require(success,\"Call function failed.\");\r\n        emit Transfer(to, amount);\r\n    }\r\n\r\n    function balance() external view returns (uint256) {\r\n        return wallet.balance;\r\n    }\r\n\r\n    function withdraw(uint256 amount) external onlyOwner {\r\n        require(wallet.balance >= amount, \"Insufficient balance\");\r\n        require(amount > 0, \"Amount must be > 0\");\r\n        (bool success, ) = payable(owner).call{value: amount}(\"\");\r\n        require(success, \"Call function failed.\");\r\n        emit Withdrawal(owner, amount);\r\n    }\r\n\r\n    function withdrawAll() external onlyOwner {\r\n        uint256 amount = wallet.balance;\r\n        require(amount > 0, \"No balance\");\r\n        (bool success, ) = payable(owner).call{value: amount}(\"\");\r\n        require(success, \"Call function failed.\");\r\n        emit Withdrawal(owner, amount);\r\n    }\r\n}",
+        "file": "contracts/SessionWallet-draft.sol"
+      }
+    }
+  }
+}
