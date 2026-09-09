@@ -1,0 +1,70 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "product",
+						"type": "bytes"
+					},
+					{
+						"internalType": "bytes",
+						"name": "expectedHash",
+						"type": "bytes"
+					}
+				],
+				"name": "validate",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Escrow.sol": "IValidator"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Escrow.sol": {
+			"keccak256": "0xefa596c08e4d2394a4cd72fac966a43b51b8796fccd40a3672c7d11690e213b6",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4d7ed4d8bc3da9189e30abfa7c71f5f0b5ffc4d8b88eb9c59e91e2dcc9bc5d70",
+				"dweb:/ipfs/QmPESvyLpDbquizUe1QaUv59MfKoGmt1JhbU8qp6aXbgJw"
+			]
+		}
+	},
+	"version": 1
+}

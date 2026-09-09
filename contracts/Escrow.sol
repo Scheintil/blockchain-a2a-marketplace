@@ -28,12 +28,11 @@ contract Escrow {
     /// @param _provider Wallet-Adresse des Providers
     /// @param _deadline Unix-Timestamp, bis zu dem die Mittel maximal gesperrt bleiben
     /// @param _expectedHash keccak256-Hash der erwarteten Loesung ("valid")
-    constructor(address _provider,address _validator, uint256 _deadline, bytes memory _expectedHash) payable {
-        //require(msg.value > 0, "amount muss > 0 sein"); // entspricht "Refuse" im Diagramm
+    constructor(address _costumer, address _provider,address _validator, uint256 _deadline, bytes memory _expectedHash) payable {
         require(_provider != address(0), "Provider Adresse ungueltig");
         require(_deadline > 0, "Deadline muss in der Zukunft liegen");
         require(_validator != address(0), "Validator Adresse ungueltig");
-        customer = msg.sender;
+        customer = _costumer;
         provider = _provider;
         validator = _validator;
         deadline = _deadline+block.timestamp;
