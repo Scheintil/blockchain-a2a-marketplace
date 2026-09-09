@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 interface IValidator {
-    function validate(uint product, uint expectedHash) external view returns (bool);
+    function validate(bytes calldata product, bytes calldata expectedHash) external view returns (bool);
 }
-
+//works with bytes. Example input "0x6d65696e654c6f6573756e67"
 contract Escrow {
     address public immutable customer;
     address public immutable provider;
     address public immutable validator;
-    uint public immutable expectedHash; // entspricht "valid" im Diagramm
+    bytes public  expectedHash; // entspricht "valid" im Diagramm
     uint256 public deadline;               // entspricht "timestemp" im Diagramm
     uint256 public amount;
     bool public closed;
     bool public refundable;
-    uint256 public finalproduct;
+    bytes public finalproduct;
 
     event EscrowCreated(address indexed customer, address indexed provider, address indexed validator,uint256 amount, uint256 deadline);
     event AmountIncreased(uint256 newAmount);
@@ -28,7 +28,7 @@ contract Escrow {
     /// @param _provider Wallet-Adresse des Providers
     /// @param _deadline Unix-Timestamp, bis zu dem die Mittel maximal gesperrt bleiben
     /// @param _expectedHash keccak256-Hash der erwarteten Loesung ("valid")
-    constructor(address _provider,address _validator, uint256 _deadline, uint256 _expectedHash) payable {
+    constructor(address _provider,address _validator, uint256 _deadline, bytes memory _expectedHash) payable {
         //require(msg.value > 0, "amount muss > 0 sein"); // entspricht "Refuse" im Diagramm
         require(_provider != address(0), "Provider Adresse ungueltig");
         require(_deadline > 0, "Deadline muss in der Zukunft liegen");
@@ -53,7 +53,7 @@ contract Escrow {
 
     /// @notice Provider liefert die Loesung ("product"). Bei korrektem Hash wird ausgezahlt.
     /// @param product Die Loesung/der Input, dessen Hash geprueft wird
-    function callEscrow(uint  product) external notClosed {
+    function callEscrow(bytes  calldata product) external notClosed {
         require(msg.sender == provider, "Nur Provider darf aufrufen");
         bool isValid = IValidator(validator).validate(product, expectedHash);
         require(isValid, "Validierung fehlgeschlagen");
