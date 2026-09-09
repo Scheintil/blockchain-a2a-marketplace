@@ -6,7 +6,7 @@ contract SimpleValidator {
     /// @param product Die Lösung (z. B. als bytes)
     /// @param expectedHash Der erwartete Hash (z. B. als bytes)
     /// @return true, wenn die Validierung erfolgreich ist
-    function validate(uint  product, uint  expectedHash) external pure returns (bool) {
-        return (product == expectedHash);
+    function validate(bytes calldata product, bytes calldata expectedHash) external pure returns (bool) {
+        return (keccak256(product) == keccak256(expectedHash));
     }
 }
