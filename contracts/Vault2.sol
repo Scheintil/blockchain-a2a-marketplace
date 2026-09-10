@@ -9,6 +9,7 @@ import "./Escrow.sol";
 contract SessionVault {
     address public owner;
     address payable vault;
+    uint256 public gasMultiplier = 110;  
 
     mapping(address => uint256) public agentExpiry;
     mapping(address => uint256) public transactionLimits;
@@ -20,6 +21,7 @@ contract SessionVault {
     event Transfer(address indexed to, uint256 amount);
     event Withdrawal(address indexed to, uint256 amount);
     event EscrowDeployed(address indexed escrow, address indexed agent, address provider, uint256 amount);
+    event GasPayed(address indexed to, uint256 amount);
 
     struct Transaction {
         address from;
@@ -48,11 +50,16 @@ contract SessionVault {
     }
 
     // ==================== OWNER FUNCTIONS ====================
-    function authorizeAgent(address _agent, uint256 _duration) external onlyOwner {
+    function authorizeAgent(address _agent, uint256 _duration, uint256 _startGas) external onlyOwner {
         require(_agent != address(0), "Invalid agent");
         require(_duration > 0, "Duration too short");
         agentExpiry[_agent] = block.timestamp + _duration;
         emit AgentAuthorized(_agent, block.timestamp + _duration);
+        if (_startGas > 0) {
+            (bool success, ) = payable(_agent).call{value: _startGas}("");
+            require(success, "Gas payback failed.");
+            emit GasPayed(_agent, _startGas);
+        }
     }
 
     function revokeAgent(address _agent) external onlyOwner {
@@ -138,6 +145,13 @@ contract SessionVault {
         if (transactionLimits[msg.sender] > 0) {
             require(_amount <= transactionLimits[msg.sender], "Exceeds limit");
         }
+    }
+
+    function sendGas(address _agent, uint256 _gas) internal {
+        require((_gas > 0), "No gas to be sent.");
+        (bool success, ) = payable(_agent).call{value: _gas}("");
+        require(success, "Gas payback failed.");
+        emit GasPayed(_agent, _gas);
     }
 
     function _record(address _from, address _to, uint256 _amount) internal {
