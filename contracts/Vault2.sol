@@ -9,10 +9,10 @@ import "./Escrow.sol";
 contract SessionVault {
     address public owner;
     address payable vault;
-    uint256 public gasMultiplier = 110;  
 
     mapping(address => uint256) public agentExpiry;
     mapping(address => uint256) public transactionLimits;
+    mapping(address => uint256[4]) public timedtransactionLimits;
 
     address[] public escrows;   // every escrow this vault created
 
@@ -21,7 +21,6 @@ contract SessionVault {
     event Transfer(address indexed to, uint256 amount);
     event Withdrawal(address indexed to, uint256 amount);
     event EscrowDeployed(address indexed escrow, address indexed agent, address provider, uint256 amount);
-    event GasPayed(address indexed to, uint256 amount);
 
     struct Transaction {
         address from;
@@ -50,16 +49,11 @@ contract SessionVault {
     }
 
     // ==================== OWNER FUNCTIONS ====================
-    function authorizeAgent(address _agent, uint256 _duration, uint256 _startGas) external onlyOwner {
+    function authorizeAgent(address _agent, uint256 _duration) external onlyOwner {
         require(_agent != address(0), "Invalid agent");
         require(_duration > 0, "Duration too short");
         agentExpiry[_agent] = block.timestamp + _duration;
         emit AgentAuthorized(_agent, block.timestamp + _duration);
-        if (_startGas > 0) {
-            (bool success, ) = payable(_agent).call{value: _startGas}("");
-            require(success, "Gas payback failed.");
-            emit GasPayed(_agent, _startGas);
-        }
     }
 
     function revokeAgent(address _agent) external onlyOwner {
@@ -69,6 +63,10 @@ contract SessionVault {
 
     function setAgentLimit(address _agent, uint256 _limit) external onlyOwner {
         transactionLimits[_agent] = _limit;
+    }
+    function settimedAgentLimit(address _agent, uint256 _limit,uint _time) external onlyOwner {
+
+        timedtransactionLimits[_agent] = [_limit,_time,0,block.timestamp];
     }
 
     function withdraw(uint256 amount) external onlyOwner {
@@ -145,17 +143,24 @@ contract SessionVault {
         return escrows.length;
     }
 
-    function _checkLimit(uint256 _amount) internal view {
+    function _checkLimit(uint256 _amount) internal{
         if (transactionLimits[msg.sender] > 0) {
             require(_amount <= transactionLimits[msg.sender], "Exceeds limit");
         }
-    }
+        if (timedtransactionLimits[msg.sender][0]>0){
+            if(timedtransactionLimits[msg.sender][3]>block.timestamp-timedtransactionLimits[msg.sender][1]){
+                require(timedtransactionLimits[msg.sender][0]>=timedtransactionLimits[msg.sender][2]+_amount, "Exceeds timed limit");
+                timedtransactionLimits[msg.sender][2]+_amount;
+            }
+            else{
+                timedtransactionLimits[msg.sender][3]=block.timestamp+timedtransactionLimits[msg.sender][1];
+                require(timedtransactionLimits[msg.sender][0]>=_amount, "Exceeds timed limit");
 
-    function sendGas(address _agent, uint256 _gas) internal {
-        require((_gas > 0), "No gas to be sent.");
-        (bool success, ) = payable(_agent).call{value: _gas}("");
-        require(success, "Gas payback failed.");
-        emit GasPayed(_agent, _gas);
+                timedtransactionLimits[msg.sender][2]=_amount;
+            }
+
+        }
+
     }
 
     function _record(address _from, address _to, uint256 _amount) internal {
