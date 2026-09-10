@@ -132,6 +132,10 @@ contract SessionVault {
         _record(msg.sender, _escrow, _amount);
     }
 
+    function refund(address payable _escrow)external onlyAgent{
+        Escrow(_escrow).refund();
+    }
+
     // ==================== PUBLIC / HELPERS ====================
     function balance() external view returns (uint256) {
         return vault.balance;
