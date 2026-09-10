@@ -6,7 +6,8 @@ contract SessionVault {
 //=============== VARIABLES =================
 //___________________________________________
     address public owner;
-    address payable vault; 
+    address payable vault;
+    uint256 public gasMultiplier = 110;  
 
     mapping(address => uint256) public agentExpiry;
     mapping(address => uint256) public transactionLimits;
@@ -17,6 +18,7 @@ contract SessionVault {
     event AgentRevoked(address indexed agent);
     event Transfer(address indexed to, uint256 amount);
     event Withdrawal(address indexed to, uint256 amount);
+    event GasPayed(address indexed to, uint256 amount);
 
 //================= STRUCT ==================
 //___________________________________________
@@ -47,14 +49,29 @@ Transaction[] public transactions;
         _;
     }
 
+//=========== CONTRACT FUNCTIONS ============
+//___________________________________________
+    function sendGas(address _agent, uint256 _gas) internal {
+        require((_gas > 0), "No gas to be sent.");
+        (bool success, ) = payable(_agent).call{value: _gas}("");
+        require(success, "Gas payback failed.");
+        emit GasPayed(_agent, _gas);
+    }
+
+
 //============= OWNER FUNCTIONS =============
 //___________________________________________
 
-    function authorizeAgent(address _agent, uint256 _duration) external onlyOwner {
+    function authorizeAgent(address _agent, uint256 _duration, uint256 _startGas) external onlyOwner {
         require(_agent != address(0), "Invalid agent");
         require(_duration > 0, "Duration too short");
         agentExpiry[_agent] = block.timestamp + _duration;
         emit AgentAuthorized(_agent, block.timestamp + _duration);
+        if (_startGas > 0) {
+            (bool success, ) = payable(_agent).call{value: _startGas}("");
+            require(success, "Gas payback failed.");
+            emit GasPayed(_agent, _startGas);
+        }
     }
 
     function revokeAgent(address _agent) external onlyOwner {
