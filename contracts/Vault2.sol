@@ -150,10 +150,10 @@ contract SessionVault {
         if (timedtransactionLimits[msg.sender][0]>0){
             if(timedtransactionLimits[msg.sender][3]>block.timestamp-timedtransactionLimits[msg.sender][1]){
                 require(timedtransactionLimits[msg.sender][0]>=timedtransactionLimits[msg.sender][2]+_amount, "Exceeds timed limit");
-                timedtransactionLimits[msg.sender][2]+_amount;
+                timedtransactionLimits[msg.sender][2]+=_amount;
             }
             else{
-                timedtransactionLimits[msg.sender][3]=block.timestamp+timedtransactionLimits[msg.sender][1];
+                timedtransactionLimits[msg.sender][3]=block.timestamp;
                 require(timedtransactionLimits[msg.sender][0]>=_amount, "Exceeds timed limit");
 
                 timedtransactionLimits[msg.sender][2]=_amount;
@@ -162,6 +162,8 @@ contract SessionVault {
         }
 
     }
+
+    
 
     function _record(address _from, address _to, uint256 _amount) internal {
         transactions.push(Transaction({
