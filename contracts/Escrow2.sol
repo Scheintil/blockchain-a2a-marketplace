@@ -21,6 +21,7 @@ contract Escrow {
     uint256 public deadline;             // absolute timestamp
     uint256 public amount;
     bool    public closed;
+    bool    private locked;
     bytes   public finalproduct;
 
     event EscrowCreated(address indexed customer, address indexed provider, address indexed validator, uint256 amount, uint256 deadline);
@@ -29,8 +30,15 @@ contract Escrow {
     event EscrowRefunded(address indexed customer, uint256 amount);
 
     modifier notClosed() {
-        require(!closed, "Escrow ist bereits geschlossen");
+        require(!closed, "Escrow is already closed.");
         _;
+    }
+
+    modifier nonReentrant(){
+        require(!locked, "Reentrant call.");
+        locked = true;
+        _;
+        locked = false;
     }
 
     /// @param _duration seconds from now until the funds can be refunded
@@ -40,9 +48,9 @@ contract Escrow {
         uint256 _duration,
         bytes memory _expectedHash
     ) payable {
-        require(_provider != address(0), "Provider Adresse ungueltig");
-        require(_validator != address(0), "Validator Adresse ungueltig");
-        require(_duration > 0, "Deadline muss in der Zukunft liegen");
+        require(_provider != address(0), "Provider address invalid.");
+        require(_validator != address(0), "Validator address invalid.");
+        require(_duration > 0, "Deadline must be in future.");
 
         customer     = msg.sender;              // the vault
         provider     = _provider;
@@ -56,16 +64,16 @@ contract Escrow {
 
     /// @notice Only the customer (the vault) can add funds.
     function increaseAmount() external payable notClosed {
-        require(msg.sender == customer, "Nur Customer darf aufstocken");
-        require(msg.value > 0, "Betrag muss > 0 sein");
+        require(msg.sender == customer, "Only customer can increase funds.");
+        require(msg.value > 0, "Value must be > 0.");
         amount += msg.value;
         emit AmountIncreased(amount);
     }
 
     /// @notice Provider delivers the product; on valid product they get paid.
-    function callEscrow(bytes calldata product) external notClosed {
-        require(msg.sender == provider, "Nur Provider darf aufrufen");
-        require(IValidator(validator).validate(product, expectedHash), "Validierung fehlgeschlagen");
+    function callEscrow(bytes calldata product) external notClosed nonReentrant {
+        require(msg.sender == provider, "Only Provider can call.");
+        require(IValidator(validator).validate(product, expectedHash), "Validation failed.");
 
         uint256 payout = amount;
         amount = 0;
@@ -73,22 +81,21 @@ contract Escrow {
         finalproduct = product;             // customer can read the delivered product
 
         (bool success, ) = provider.call{value: payout}("");
-        require(success, "Auszahlung an Provider fehlgeschlagen");
-
+        require(success, "Payout to provider failed.");
         emit EscrowCompleted(provider, payout);
     }
 
     /// @notice After the deadline the funds go back to the customer (the vault).
-    function refund() external notClosed {
-        require(block.timestamp > deadline, "Deadline noch nicht erreicht");
+    function refund() external notClosed nonReentrant {
+        require(msg.sender == customer, "Only customer can refund.");
+        require(block.timestamp > deadline, "Deadline not reached.");
 
         uint256 payout = amount;
         amount = 0;
         closed = true;
 
         (bool success, ) = customer.call{value: payout}("");
-        require(success, "Rueckzahlung an Customer fehlgeschlagen");
-
+        require(success, "Refund to customer failed.");
         emit EscrowRefunded(customer, payout);
     }
 }
