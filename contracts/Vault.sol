@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./Escrow2.sol";
+import "./Escrow.sol";
 
 // ============================================================
 //  SESSION VAULT  (holds funds, authorizes agents, spawns escrows)
