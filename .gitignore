@@ -1,5 +1,6 @@
 # Remix IDE
 .remix/
+.deps/
 artifacts/
 build/
 cache/
