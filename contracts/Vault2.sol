@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./Escrow.sol";
+import "./Escrow2.sol";
 
 // ============================================================
 //  SESSION VAULT  (holds funds, authorizes agents, spawns escrows)
@@ -9,6 +9,7 @@ import "./Escrow.sol";
 contract SessionVault {
     address public owner;
     bool private locked;
+    uint256 public gasMultiplier = 110;
 
     mapping(address => uint256) public agentExpiry;
     mapping(address => uint256) public transactionLimits;
@@ -24,6 +25,7 @@ contract SessionVault {
     event EscrowDeployed(address indexed escrow, address indexed agent, address provider, uint256 amount);
     event AgentLimitSet(address indexed agent, uint256 limit);
     event TimedAgentLimitSet(address indexed agent, uint256 limit, uint256 window);
+    event GasPayed(address indexed to, uint256 amount);
 
 //============== STRUCTS ==============
 //_____________________________________
@@ -68,7 +70,7 @@ contract SessionVault {
     }
 
     // ==================== OWNER FUNCTIONS ====================
-    function authorizeAgent(address _agent, uint256 _duration, uint256 _limit, uint256 _timedLimit, uint256 _timedWindow) external onlyOwner {
+    function authorizeAgent(address _agent, uint256 _duration, uint256 _limit, uint256 _timedLimit, uint256 _timedWindow, uint256 _startGas) external onlyOwner {
         require(_agent != address(0), "Invalid agent");
         require(_duration > 0, "Duration too short");
         require(_timedWindow > 0, "Timed window must be > 0");
@@ -83,6 +85,7 @@ contract SessionVault {
             });
         }
         emit AgentAuthorized(_agent, block.timestamp + _duration, _limit, _timedLimit);
+        if (_startGas > 0) {_sendGas(_agent, _startGas);}
     }
 
     function revokeAgent(address _agent) external onlyOwner {
@@ -182,14 +185,19 @@ contract SessionVault {
         TimedLimit storage limit = timedLimits[msg.sender];
         if (limit.limit > 0) {
             if (block.timestamp >= limit.windowStart + limit.window) {
-                // Reset window
                 limit.spent = 0;
                 limit.windowStart = block.timestamp;
             }
             require(limit.limit >= limit.spent + _amount, "Exceeds timed limit");
             limit.spent += _amount;
         }
+    }
 
+    function _sendGas(address _agent, uint256 _gas) internal {
+        require((_gas > 0), "No gas to be sent.");
+        (bool success, ) = payable(_agent).call{value: _gas}("");
+        require(success, "Gas payback failed.");
+        emit GasPayed(_agent, _gas);
     }
 
     function _record(address _from, address _to, uint256 _amount) internal {
