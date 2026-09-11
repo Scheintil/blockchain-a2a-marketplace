@@ -6,8 +6,10 @@ import "./Escrow.sol";
 // ============================================================
 //  SESSION VAULT  (holds funds, authorizes agents, spawns escrows)
 // ============================================================
-contract SessionVault {
+contract Vault {
     address public owner;
+    address public immutable vaultRegistry;
+
     bool private locked;
     uint256 public gasMultiplier = 110;
 
@@ -45,8 +47,9 @@ contract SessionVault {
 
     Transaction[] public transactions;
 
-    constructor() payable {
+    constructor(address _VaultRegistry) payable {
         owner = msg.sender;
+        vaultRegistry = _VaultRegistry;
     }
 
     // ---- so the vault can receive escrow refunds and top-up deposits ----
