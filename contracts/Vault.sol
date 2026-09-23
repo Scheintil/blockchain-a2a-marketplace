@@ -8,7 +8,6 @@ import "./Escrow.sol";
 // ============================================================
 contract Vault {
     address public owner;
-    address public immutable vaultRegistry;
 
     bool private locked;
     uint256 public gasMultiplier = 110;
@@ -47,9 +46,8 @@ contract Vault {
 
     Transaction[] public transactions;
 
-    constructor(address _VaultRegistry) payable {
+    constructor() payable {
         owner = msg.sender;
-        vaultRegistry = _VaultRegistry;
     }
 
     // ---- so the vault can receive escrow refunds and top-up deposits ----
