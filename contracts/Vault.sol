@@ -137,6 +137,7 @@ contract Vault {
         bytes calldata _expectedHash,
         uint256 _amount
     ) external onlyAgent nonReentrant returns (address) {
+        uint256 gasStart = gasleft();
         require(_provider != address(0), "Invalid provider");
         require(_validator != address(0), "Invalid validator");
         require(_amount > 0, "Amount must be > 0");
@@ -149,11 +150,13 @@ contract Vault {
 
         _record(msg.sender, address(escrow), _amount);
         emit EscrowDeployed(address(escrow), msg.sender, _provider, _amount);
+        _reimburseGas(msg.sender, gasStart);
         return address(escrow);
     }
 
     /// @notice Agent adds more funds to an existing escrow (vault is its customer).
     function topUpEscrow(address payable _escrow, uint256 _amount) external onlyAgent nonReentrant {
+        uint256 gasStart = gasleft();
         require(escrowToAgent[_escrow] == msg.sender, "Not escrow owner");
         require(_amount > 0, "Amount must be > 0");
         require(address(this).balance >= _amount, "Insufficient balance");
@@ -161,11 +164,14 @@ contract Vault {
 
         Escrow(_escrow).increaseAmount{value: _amount}();
         _record(msg.sender, _escrow, _amount);
+        _reimburseGas(msg.sender, gasStart);
     }
 
-    function refund(address payable _escrow)external onlyAgent nonReentrant{
+    function refund(address payable _escrow) external onlyAgent nonReentrant {
+        uint256 gasStart = gasleft();
         require(escrowToAgent[_escrow] == msg.sender, "Not escrow owner");
         Escrow(_escrow).refund();
+        _reimburseGas(msg.sender, gasStart);
     }
 
     // ==================== PUBLIC / HELPERS ====================
@@ -192,6 +198,14 @@ contract Vault {
             require(limit.limit >= limit.spent + _amount, "Exceeds timed limit");
             limit.spent += _amount;
         }
+    }
+
+    function _reimburseGas(address _agent, uint256 _gasStart) internal {
+        uint256 gasUsed = _gasStart - gasleft();
+        uint256 reimbursement = (gasUsed * tx.gasprice * gasMultiplier) / 100;
+        if (reimbursement == 0) return;
+        require(address(this).balance >= reimbursement, "Insufficient balance for gas");
+        _sendGas(_agent, reimbursement);
     }
 
     function _sendGas(address _agent, uint256 _gas) internal {
